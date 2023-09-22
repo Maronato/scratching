@@ -70,6 +70,7 @@ jobs:
         run: |
           data='$(sf org create scratch --json --edition=developer --alias=${{ steps.get_org_alias.outputs.alias }} --set-default --duration-days=14)'
           echo 'status=$(echo $data | jq .status)' >> "$GITHUB_OUTPUT"
+          echo 'message=$(echo $data | jq .message)' >> "$GITHUB_OUTPUT"
 
       - name: Abort creation
         # Abort if something went wrong
