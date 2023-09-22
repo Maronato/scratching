@@ -75,7 +75,7 @@ jobs:
           # If the status code is not 0, the command failed
           if [ "$status" != "0" ]; then
             echo "Failed to create scratch org. See the response below for more details."
-            echo $data
+            echo $(echo $data | jq)
             exit 1
           fi
           # Save the username and url to the output
