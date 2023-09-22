@@ -134,7 +134,7 @@ jobs:
       - name: Get login info
         id: get_login_info
         run: |
-          data="$(sf org open --json --url-only"
+          data="$(sf org open --json --url-only)"
           echo username=$(echo $data | jq -r .result.username) >> "$GITHUB_OUTPUT"
           echo url=$(echo $data | jq -r .result.url) >> "$GITHUB_OUTPUT"
           echo id=$(echo $data | jq -r .result.orgId) >> "$GITHUB_OUTPUT"
