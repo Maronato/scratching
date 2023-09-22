@@ -48,3 +48,6 @@ $RECYCLE.BIN/
 *.crt
 *.csr
 *.pass.key
+*.key
+authfile.json
+auth.json
