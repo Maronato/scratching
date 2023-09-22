@@ -72,7 +72,7 @@ jobs:
           status=$(echo $data | jq .status)
           message=$(echo $data | jq .message)
           if [ "$status" != "0" ]; then
-            echo $message
+            echo Failed to create scratch org! Error: "$message"
             exit 1
           fi
 
