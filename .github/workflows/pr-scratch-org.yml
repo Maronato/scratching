@@ -12,7 +12,7 @@ permissions:
 jobs:
   delete:
     name: Delete PR scratch org
-    if: ${{ github.event.action == 'opened' || github.event.action == 'reopened' || github.event.action == 'closed' }}
+    if: ${{ github.event.action == 'reopened' || github.event.action == 'closed' }}
     runs-on: ubuntu-latest
     steps:
       ############## Setup ##############
@@ -168,8 +168,7 @@ jobs:
 
   deploy:
     name: Deploy to PR scratch org
-    if: ${{ (success() && (github.event.action == 'opened' || github.event.action == 'reopened')) || github.event.action == 'synchronize' }}
-    needs: create
+    if: ${{ github.event.action == 'synchronize' }}
     runs-on: ubuntu-latest
     steps:
       ############## Setup ##############
