@@ -1,5 +1,5 @@
 #.github/workflows/main.yml
-name: Deploy code to PR Scratch Org
+name: Deploy to scratch org
 on:
   pull_request:
     # types: [synchronize]
@@ -9,6 +9,7 @@ on:
 
 jobs:
   deploy:
+    name: Deploy to PR scratch org
     runs-on: ubuntu-latest
     permissions:
       # Allow creating comments

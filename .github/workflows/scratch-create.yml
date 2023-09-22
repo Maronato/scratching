@@ -1,4 +1,4 @@
-name: Create PR Scratch Org
+name: Create scratch org for PR
 on:
   pull_request:
     # types: [opened, reopened]
@@ -8,6 +8,7 @@ on:
 
 jobs:
   create:
+    name: Create PR scratch org
     runs-on: ubuntu-latest
     permissions:
       # Allow creating comments
