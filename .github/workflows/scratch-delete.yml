@@ -9,6 +9,7 @@ jobs:
   delete:
     runs-on: ubuntu-latest
     steps:
+      ############## Setup ##############
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
@@ -50,9 +51,10 @@ jobs:
 
       - name: Query existing PR scratch org
         id: query_current_org
-        run: sf org display --target-org=${{ steps.get_org_alias.outputs.alias }} --json >> "$GITHUB_OUTPUT"
+        run: echo 'status=$(sf org display --target-org=${{ steps.get_org_alias.outputs.alias }} --json | jq .status)' >> "$GITHUB_OUTPUT"
 
+      ############## Deploy ##############
       - name: Delete existing PR scratch org
         # Do nothing if the scratch org doesn't exist
-        if: fromJson(steps.query_current_org.outputs).status == 0
+        if: steps.query_current_org.outputs.status == 0
         run: sf org delete scratch --target-org=${{ steps.get_org_alias.outputs.alias }} --no-prompt
