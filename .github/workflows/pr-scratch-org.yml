@@ -152,11 +152,13 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
+            const { ORG_USERNAME, ORG_URL, ORG_ID } = process.env
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: "### 🚀 **Scratch org created!**\n\n - Org ID: $ORG_ID\n - Username: $ORG_USERNAME\n - Link: $ORG_URL\n\n**Instructions**\n - Use it perform tests and QA\n - Pushes to this PR will be deployed automatically\n - It'll be deleted automatically after 14 days or when the PR is closed"
+              body: "### 🚀 **Scratch org created!**\n\n - Org ID: ${ORG_ID}\n - Username: ${ORG_USERNAME}\n - Link: ${ORG_URL}\n\n**Instructions**\n - Use it perform tests and QA\n - Pushes to this PR will be deployed automatically\n - It'll be deleted automatically after 14 days or when the PR is closed"
             })
 
   deploy:
