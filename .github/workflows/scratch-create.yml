@@ -67,8 +67,7 @@ jobs:
 
       - name: Create scratch org
         id: create_org
-        run: |
-          data=$(sf org create scratch --json --edition=developer --alias=${{ steps.get_org_alias.outputs.alias }} --set-default --duration-days=14)
+        run: sf org create scratch --json --edition=developer --alias=${{ steps.get_org_alias.outputs.alias }} --set-default --duration-days=14
 
       - name: Abort creation
         # Abort if something went wrong
