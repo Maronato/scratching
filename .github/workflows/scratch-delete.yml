@@ -53,8 +53,14 @@ jobs:
         id: query_current_org
         run: echo 'status=$(sf org display --target-org=${{ steps.get_org_alias.outputs.alias }} --json | jq .status)' >> "$GITHUB_OUTPUT"
 
-      ############## Deploy ##############
+      ############## Delete ##############
+
+      - name: Abort deletion
+        # Abort if the scratch org doesn't exist
+        if: steps.query_current_org.outputs.status != 0
+        run: |
+          echo "No scratch org found for this PR. Aborting"
+          exit 1
+
       - name: Delete existing PR scratch org
-        # Do nothing if the scratch org doesn't exist
-        if: steps.query_current_org.outputs.status == 0
         run: sf org delete scratch --target-org=${{ steps.get_org_alias.outputs.alias }} --no-prompt
