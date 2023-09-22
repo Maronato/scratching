@@ -69,11 +69,10 @@ jobs:
         id: create_org
         run: |
           data=$(sf org create scratch --json --edition=developer --alias=${{ steps.get_org_alias.outputs.alias }} --set-default --duration-days=14)
-          echo $(echo data | jq .)
-          echo status=$(echo $data | jq .status) >> "$GITHUB_OUTPUT"
-          echo message=$(echo $data | jq .message) >> "$GITHUB_OUTPUT"
-          echo username=$(echo $data | jq .result.username) >> "$GITHUB_OUTPUT"
-          echo url=$(echo $data | jq .result.url) >> "$GITHUB_OUTPUT"
+          echo 'status=$(echo $data | jq .status)' >> "$GITHUB_OUTPUT"
+          echo 'message=$(echo $data | jq .message)' >> "$GITHUB_OUTPUT"
+          # echo 'username=$(echo $data | jq .result.username)' >> "$GITHUB_OUTPUT"
+          # echo 'url=$(echo $data | jq .result.url)' >> "$GITHUB_OUTPUT"
 
       - name: Abort creation
         # Abort if something went wrong
