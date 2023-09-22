@@ -34,8 +34,8 @@ jobs:
             }
           result-encoding: string
       - name: Get scratch org alias
-        id: org_alias
-        run: echo "pull-request-${{ steps.get_issue_number.outputs.result }}" >> "$GITHUB_OUTPUT"
+        id: get_org_alias
+        run: echo "alias=pull-request-${{ steps.get_issue_number.outputs.result }}" >> "$GITHUB_OUTPUT"
 
       - name: Install sfdx
         run: npm install @salesforce/cli@2.9.8 --global
@@ -47,12 +47,12 @@ jobs:
           rm auth.json
 
       - name: Query existing PR scratch org
-        id: current_org
+        id: query_current_org
         env:
           PR_NUMBER: ${{ steps.get_issue_number.outputs.result }}
         run: sf org display --target-org=pull-request-${PR_NUMBER} --json >> "$GITHUB_OUTPUT"
 
       - name: Delete existing PR scratch org
         # Do nothing if the scratch org doesn't exist
-        if: fromJson(steps.current_org.outputs).status == 0
-        run: sf org delete scratch --target-org=${{ steps.org_alias.outputs }} --no-prompt
+        if: fromJson(steps.query_current_org.outputs).status == 0
+        run: sf org delete scratch --target-org=${{ steps.get_org_alias.outputs.alias }} --no-prompt

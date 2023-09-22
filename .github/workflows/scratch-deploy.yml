@@ -39,8 +39,8 @@ jobs:
             }
           result-encoding: string
       - name: Get scratch org alias
-        id: org_alias
-        run: echo "pull-request-${{ steps.get_issue_number.outputs.result }}" >> "$GITHUB_OUTPUT"
+        id: get_org_alias
+        run: echo "alias=pull-request-${{ steps.get_issue_number.outputs.result }}" >> "$GITHUB_OUTPUT"
 
       - name: Install sfdx
         run: npm install @salesforce/cli@2.9.8 --global
@@ -52,7 +52,7 @@ jobs:
           rm auth.json
 
       - name: Query existing PR scratch org
-        id: current_org
+        id: query_current_org
         env:
           PR_NUMBER: ${{ steps.get_issue_number.outputs.result }}
         run: sf org display --target-org=pull-request-${PR_NUMBER} --json >> "$GITHUB_OUTPUT"
@@ -61,13 +61,13 @@ jobs:
 
       - name: Abort deployment
         # Abort if the scratch org doesn't exist
-        if: fromJson(steps.current_org.outputs).status != 0
+        if: fromJson(steps.query_current_org.outputs).status != 0
         run: |
           echo "No scratch org found for this PR. Aborting deployment."
           exit 1
 
       - name: Deploy source
-        run: sf project deploy start --target-org=${{ steps.org_alias.outputs }} --dry-run
+        run: sf project deploy start --target-org=${{ steps.get_org_alias.outputs.alias }} --dry-run
 
       - name: Comment deployment
         uses: actions/github-script@v6
