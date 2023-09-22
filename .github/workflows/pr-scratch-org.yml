@@ -131,6 +131,7 @@ jobs:
             echo -E "$(echo $data | jq)"
             exit 1
           fi
+          echo -E "$(echo $data | jq))"
 
       - name: Get login info
         id: get_login_info
