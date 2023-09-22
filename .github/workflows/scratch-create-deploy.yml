@@ -1,0 +1,172 @@
+name: Create scratch org for PR
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    # branches:
+    #   - "scratch-alpha/**"
+
+permissions:
+  # Allow creating comments
+  issues: write
+
+jobs:
+  create:
+    name: Create PR scratch org
+    if: github.event.action == 'opened' || github.event.action == 'reopened'
+    runs-on: ubuntu-latest
+    steps:
+      ############## Setup ##############
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Get PR number
+        uses: actions/github-script@v6
+        id: get_issue_number
+        with:
+          script: |
+            if (context.issue.number) {
+              // Return issue number if present
+              return context.issue.number;
+            } else {
+              // Otherwise return issue number from commit
+              return (
+                await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                  commit_sha: context.sha,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                })
+              ).data[0].number;
+            }
+          result-encoding: string
+      - name: Get scratch org alias
+        id: get_org_alias
+        run: echo "alias=pull-request-${{ steps.get_issue_number.outputs.result }}" >> "$GITHUB_OUTPUT"
+
+      - name: Install sfdx
+        run: npm install @salesforce/cli@2.9.8 --global
+
+      - name: Authenticate
+        env:
+          SFDX_AUTH_FILE: ${{ secrets.SFDX_AUTH_FILE }}
+        run: |
+          echo "${SFDX_AUTH_FILE}" > auth.json
+          sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias devhub
+          rm auth.json
+
+      - name: Query existing PR scratch org
+        id: query_current_org
+        run: echo 'status=$(sf org display --target-org=${{ steps.get_org_alias.outputs.alias }} --json | jq .status)' >> "$GITHUB_OUTPUT"
+
+      ############## Create ##############
+
+      - name: Delete existing PR scratch org
+        # Do nothing if the scratch org doesn't exist
+        if: steps.query_current_org.outputs.status == 0
+        run: sf org delete scratch --target-org=${{ steps.get_org_alias.outputs.alias }} --no-prompt
+
+      - name: Create scratch org
+        run: |
+          # Attempt to create the scratch org and save the output
+          data="$(sf org create scratch --json --edition=developer --alias=${{ steps.get_org_alias.outputs.alias }} --set-default --duration-days=14 || true)"
+          # If the status code is not 0, the command failed
+          if [ "$(echo $data | jq .status)" != "0" ]; then
+            echo "Failed to create scratch org. See the response below for more details."
+            echo -E "$(echo $data | jq)"
+            exit 1
+          fi
+
+      - name: Get login info
+        id: get_login_info
+        run: |
+          data="$(sf org open --json --url-only --target-org=${{ steps.get_org_alias.outputs.alias }})"
+          echo username=$(echo $data | jq -r .result.username) >> "$GITHUB_OUTPUT"
+          echo url=$(echo $data | jq -r .result.url) >> "$GITHUB_OUTPUT"
+          echo id=$(echo $data | jq -r .result.orgId) >> "$GITHUB_OUTPUT"
+
+      - name: Comment login url
+        env:
+          ORG_USERNAME: ${{ steps.get_login_info.outputs.username }}}
+          ORG_URL: ${{ steps.get_login_info.outputs.url }}}
+          ORG_ID: ${{ steps.get_login_info.outputs.id }}}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '### 🚀 **Scratch org created!**\n\n - Org ID: ${ORG_ID}\n - Username: ${ORG_USERNAME}\n - Link: ${ORG_URL}\n\n**Instructions**\n - Use it perform tests and QA\n - Pushes to this PR will be deployed automatically\n - It'll be deleted automatically after 14 days or when the PR is closed'
+            })
+
+  deploy:
+    name: Deploy to PR scratch org
+    if: github.event.action == 'synchronize'
+    needs: create
+    runs-on: ubuntu-latest
+    steps:
+      ############## Setup ##############
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Get PR number
+        uses: actions/github-script@v6
+        id: get_issue_number
+        with:
+          script: |
+            if (context.issue.number) {
+              // Return issue number if present
+              return context.issue.number;
+            } else {
+              // Otherwise return issue number from commit
+              return (
+                await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                  commit_sha: context.sha,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                })
+              ).data[0].number;
+            }
+          result-encoding: string
+      - name: Get scratch org alias
+        id: get_org_alias
+        run: echo "alias=pull-request-${{ steps.get_issue_number.outputs.result }}" >> "$GITHUB_OUTPUT"
+
+      - name: Install sfdx
+        run: npm install @salesforce/cli@2.9.8 --global
+
+      - name: Authenticate
+        env:
+          SFDX_AUTH_FILE: ${{ secrets.SFDX_AUTH_FILE }}
+        run: |
+          echo "${SFDX_AUTH_FILE}" > auth.json
+          sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias devhub
+          rm auth.json
+
+      - name: Query existing PR scratch org
+        id: query_current_org
+        run: echo 'status=$(sf org display --target-org=${{ steps.get_org_alias.outputs.alias }} --json | jq .status)' >> "$GITHUB_OUTPUT"
+
+      ############## Deploy ##############
+
+      - name: Deploy source
+        run: |
+          if [ "${{ steps.query_current_org.outputs.status }}" != "0" ]; then
+            echo "Failed to get info about current scratch org. Aborting."
+            exit 1
+          fi
+          sf project deploy start --target-org=${{ steps.get_org_alias.outputs.alias }} --dry-run
+
+      - name: Comment deployment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '☁️ Deployed commit ${github.event.pull_request.head.sha}!'
+            })
