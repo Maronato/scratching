@@ -7,7 +7,7 @@ on:
 
 permissions:
   # Allow creating comments
-  issues: write
+  pull-requests: write
 
 jobs:
   delete:
