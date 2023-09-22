@@ -152,12 +152,12 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: "### 🚀 **Scratch org created!**\n\n - Org ID: ${ORG_ID}\n - Username: ${ORG_USERNAME}\n - Link: ${ORG_URL}\n\n**Instructions**\n - Use it perform tests and QA\n - Pushes to this PR will be deployed automatically\n - It'll be deleted automatically after 14 days or when the PR is closed"
+              body: "### 🚀 **Scratch org created!**\n\n - Org ID: $ORG_ID\n - Username: $ORG_USERNAME\n - Link: $ORG_URL\n\n**Instructions**\n - Use it perform tests and QA\n - Pushes to this PR will be deployed automatically\n - It'll be deleted automatically after 14 days or when the PR is closed"
             })
 
   deploy:
     name: Deploy to PR scratch org
-    if: ${{ success() || github.event.action == 'synchronize' }}
+    if: ${{ (success() && (github.event.action == 'opened' || github.event.action == 'reopened')) || github.event.action == 'synchronize' }}
     needs: create
     runs-on: ubuntu-latest
     steps:
