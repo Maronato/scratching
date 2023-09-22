@@ -60,7 +60,7 @@ jobs:
         # Abort if the scratch org doesn't exist
         if: steps.query_current_org.outputs.status != 0
         run: |
-          echo "No scratch org found for this PR. Aborting"
+          echo "No scratch org found for this PR. Aborting."
           exit 1
 
       - name: Delete existing PR scratch org
