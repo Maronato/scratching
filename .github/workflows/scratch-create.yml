@@ -2,8 +2,8 @@ name: Create PR Scratch Org
 on:
   pull_request:
     types: [opened, reopened]
-    branches:
-      - "scratch-alpha/**"
+    # branches:
+    #   - "scratch-alpha/**"
 
 jobs:
   create:

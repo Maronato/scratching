@@ -3,8 +3,8 @@ name: Deploy code to PR Scratch Org
 on:
   pull_request:
     types: [synchronize]
-    branches:
-      - "scratch-alpha/**"
+    # branches:
+    #   - "scratch-alpha/**"
 
 jobs:
   deploy:

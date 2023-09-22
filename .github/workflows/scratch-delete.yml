@@ -2,8 +2,8 @@ name: Delete PR Scratch Org
 on:
   pull_request:
     types: [closed]
-    branches:
-      - "scratch-alpha/**"
+    # branches:
+    #   - "scratch-alpha/**"
 
 jobs:
   delete:
