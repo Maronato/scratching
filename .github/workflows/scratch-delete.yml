@@ -41,16 +41,16 @@ jobs:
         run: npm install @salesforce/cli@2.9.8 --global
 
       - name: Authenticate
+        env:
+          SFDX_AUTH_FILE: ${{ secrets.SFDX_AUTH_FILE }}
         run: |
-          echo "${secrets.SFDX_AUTH_FILE}" > auth.json
+          echo "${SFDX_AUTH_FILE}" > auth.json
           sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias devhub
           rm auth.json
 
       - name: Query existing PR scratch org
         id: query_current_org
-        env:
-          PR_NUMBER: ${{ steps.get_issue_number.outputs.result }}
-        run: sf org display --target-org=pull-request-${PR_NUMBER} --json >> "$GITHUB_OUTPUT"
+        run: sf org display --target-org=${{ steps.get_org_alias.outputs.alias }} --json >> "$GITHUB_OUTPUT"
 
       - name: Delete existing PR scratch org
         # Do nothing if the scratch org doesn't exist
