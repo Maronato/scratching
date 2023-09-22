@@ -2,7 +2,8 @@
 name: Deploy code to PR Scratch Org
 on:
   pull_request:
-    types: [synchronize]
+    # types: [synchronize]
+    types: [closed]
     # branches:
     #   - "scratch-alpha/**"
 

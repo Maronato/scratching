@@ -1,7 +1,8 @@
 name: Create PR Scratch Org
 on:
   pull_request:
-    types: [opened, reopened]
+    # types: [opened, reopened]
+    types: [synchronize]
     # branches:
     #   - "scratch-alpha/**"
 
@@ -65,7 +66,7 @@ jobs:
 
       - name: Create scratch org
         id: create_org
-        run: sf org create scratch --json --edition=developer --alias=${{ steps.get_org_alias.outputs.alias }} --set-default --duration-days=14 >> "$GITHUB_OUTPUT"
+        run: echo 'data=$(sf org create scratch --json --edition=developer --alias=${{ steps.get_org_alias.outputs.alias }} --set-default --duration-days=14)' >> "$GITHUB_OUTPUT"
 
       - name: Deploy source
         run: sf project deploy start --target-org=${{ steps.get_org_alias.outputs.alias }} --dry-run
