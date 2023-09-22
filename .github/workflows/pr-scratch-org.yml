@@ -55,7 +55,7 @@ jobs:
           sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias devhub
 
       - name: print
-        run: echo $(sf org list)
+        run: echo -E $(sf org list)
 
       - name: Query existing PR scratch org
         id: query_current_org
@@ -117,11 +117,7 @@ jobs:
           sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias devhub
 
       - name: print
-        run: echo $(sf org list)
-
-      - name: Query existing PR scratch org
-        id: query_current_org
-        run: echo 'status=$(sf org display --target-org=${{ steps.get_org_alias.outputs.alias }} --json | jq .status)' >> "$GITHUB_OUTPUT"
+        run: echo -E $(sf org list)
 
       ############## Create ##############
 
@@ -207,21 +203,12 @@ jobs:
           sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias devhub
 
       - name: print
-        run: echo $(sf org list)
-
-      - name: Query existing PR scratch org
-        id: query_current_org
-        run: echo 'status=$(sf org display --target-org=${{ steps.get_org_alias.outputs.alias }} --json | jq .status)' >> "$GITHUB_OUTPUT"
+        run: echo -E $(sf org list)
 
       ############## Deploy ##############
 
       - name: Deploy source
-        run: |
-          if [ "${{ steps.query_current_org.outputs.status }}" != "0" ]; then
-            echo "Failed to get info about current scratch org. Aborting."
-            exit 1
-          fi
-          sf project deploy start --target-org=${{ steps.get_org_alias.outputs.alias }} --dry-run
+        run: sf project deploy start --target-org=${{ steps.get_org_alias.outputs.alias }} --dry-run
 
       - name: Comment deployment
         uses: actions/github-script@v6
