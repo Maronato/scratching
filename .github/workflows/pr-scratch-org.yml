@@ -49,22 +49,19 @@ jobs:
 
       - name: Authenticate
         env:
-          SFDX_AUTH_FILE: ${{ secrets.SFDX_AUTH_FILE }}
+          SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
+          SF_JWT_SECRET_KEY: ${{ secrets.SF_JWT_SECRET_KEY }}
         run: |
-          echo "${SFDX_AUTH_FILE}" > auth.json
-          sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias=devhub
+          echo "${SF_JWT_SECRET_KEY}" > server.key
+          sf org login jwt --alias=scratch --username=${{ steps.get_org_username.outputs.username }} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub --set-default
 
       - name: print
         run: echo -E $(sf org list --json | jq)
 
-      - name: Query existing PR scratch org
-        id: query_current_org
-        run: echo 'status=$(sf org display --target-org=${{ steps.get_org_username.outputs.username }} --json | jq .status)' >> "$GITHUB_OUTPUT"
-
       ############## Delete ##############
 
       - name: Delete existing PR scratch org
-        run: sf org delete scratch --target-org=${{ steps.get_org_username.outputs.username }} --no-prompt || true
+        run: sf org delete scratch --no-prompt || true
 
   create:
     name: Create PR scratch org
@@ -106,24 +103,22 @@ jobs:
 
       - name: Authenticate
         env:
-          SFDX_AUTH_FILE: ${{ secrets.SFDX_AUTH_FILE }}
+          SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
+          SF_JWT_SECRET_KEY: ${{ secrets.SF_JWT_SECRET_KEY }}
+          SF_DEVHUB_USERNAME: ${{ secrets.SF_DEVHUB_USERNAME }}
         run: |
-          echo "${SFDX_AUTH_FILE}" > auth.json
-          sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias=devhub
+          echo "${SF_JWT_SECRET_KEY}" > server.key
+          sf org login jwt --alias=devhub --username=${SF_DEVHUB_USERNAME} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub --set-default
 
       - name: print
         run: echo -E $(sf org list --json | jq)
-
-      - name: Query existing PR scratch org
-        id: query_current_org
-        run: echo 'status=$(sf org display --target-org=${{ steps.get_org_username.outputs.username }} --json | jq .status)' >> "$GITHUB_OUTPUT"
 
       ############## Create ##############
 
       - name: Create scratch org
         run: |
           # Attempt to create the scratch org and save the output
-          data="$(sf org create scratch --json --edition=developer --username=${{ steps.get_org_username.outputs.username }} --set-default --duration-days=14 || true)"
+          data="$(sf org create scratch --json --edition=developer --username=${{ steps.get_org_username.outputs.username }} --set-default --alias=scratch --duration-days=14 || true)"
           # If the status code is not 0, the command failed
           if [ "$(echo $data | jq .status)" != "0" ]; then
             echo "Failed to create scratch org. See the response below for more details."
@@ -132,10 +127,14 @@ jobs:
           fi
           echo -E "$(echo $data | jq))"
 
+      - name: Deploy source
+        continue-on-error: true
+        run: sf project deploy start
+
       - name: Get login info
         id: get_login_info
         run: |
-          data="$(sf org open --json --url-only --target-org=${{ steps.get_org_username.outputs.username }})"
+          data="$(sf org open --json --url-only"
           echo username=$(echo $data | jq -r .result.username) >> "$GITHUB_OUTPUT"
           echo url=$(echo $data | jq -r .result.url) >> "$GITHUB_OUTPUT"
           echo id=$(echo $data | jq -r .result.orgId) >> "$GITHUB_OUTPUT"
@@ -207,22 +206,19 @@ jobs:
 
       - name: Authenticate
         env:
-          SFDX_AUTH_FILE: ${{ secrets.SFDX_AUTH_FILE }}
+          SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
+          SF_JWT_SECRET_KEY: ${{ secrets.SF_JWT_SECRET_KEY }}
         run: |
-          echo "${SFDX_AUTH_FILE}" > auth.json
-          sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias=devhub
+          echo "${SF_JWT_SECRET_KEY}" > server.key
+          sf org login jwt --alias=scratch --username=${{ steps.get_org_username.outputs.username }} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub --set-default
 
       - name: print
         run: echo -E $(sf org list --json | jq)
 
-      - name: Query existing PR scratch org
-        id: query_current_org
-        run: echo 'status=$(sf org display --target-org=${{ steps.get_org_username.outputs.username }} --json | jq .status)' >> "$GITHUB_OUTPUT"
-
       ############## Deploy ##############
 
       - name: Deploy source
-        run: sf project deploy start --target-org=${{ steps.get_org_username.outputs.username }} --dry-run
+        run: sf project deploy start --dry-run
 
       - name: Comment deployment
         uses: actions/github-script@v6
