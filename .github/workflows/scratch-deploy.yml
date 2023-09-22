@@ -55,7 +55,7 @@ jobs:
 
       - name: Query existing PR scratch org
         id: query_current_org
-        run: echo "org=$(sf org display --target-org=${{ steps.get_org_alias.outputs.alias }} --json)" >> "$GITHUB_OUTPUT"
+        run: echo 'org=$(sf org display --target-org=${{ steps.get_org_alias.outputs.alias }} --json)' >> "$GITHUB_OUTPUT"
 
       ############## Deploy ##############
 
