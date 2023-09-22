@@ -40,9 +40,9 @@ jobs:
               ).data[0].number;
             }
           result-encoding: string
-      - name: Get scratch org alias
-        id: get_org_alias
-        run: echo "alias=pull-request-${{ steps.get_issue_number.outputs.result }}" >> "$GITHUB_OUTPUT"
+      - name: Get scratch org username
+        id: get_org_username
+        run: echo "username=pull-request-${{ steps.get_issue_number.outputs.result }}@scratch-ci.com" >> "$GITHUB_OUTPUT"
 
       - name: Install sfdx
         run: npm install @salesforce/cli@2.9.8 --global
@@ -52,24 +52,19 @@ jobs:
           SFDX_AUTH_FILE: ${{ secrets.SFDX_AUTH_FILE }}
         run: |
           echo "${SFDX_AUTH_FILE}" > auth.json
-          sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias devhub
+          sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias=devhub
 
       - name: print
         run: echo -E $(sf org list --json | jq)
 
       - name: Query existing PR scratch org
         id: query_current_org
-        run: echo 'status=$(sf org display --target-org=${{ steps.get_org_alias.outputs.alias }} --json | jq .status)' >> "$GITHUB_OUTPUT"
+        run: echo 'status=$(sf org display --target-org=${{ steps.get_org_username.outputs.username }} --json | jq .status)' >> "$GITHUB_OUTPUT"
 
       ############## Delete ##############
 
       - name: Delete existing PR scratch org
-        run: |
-          if [ "${{ steps.query_current_org.outputs.status }}" != "0" ]; then
-            echo "Failed to get info about current scratch org. Aborting."
-            exit 0
-          fi
-          sf org delete scratch --target-org=${{ steps.get_org_alias.outputs.alias }} --no-prompt
+        run: sf org delete scratch --target-org=${{ steps.get_org_username.outputs.username }} --no-prompt || true
 
   create:
     name: Create PR scratch org
@@ -102,9 +97,9 @@ jobs:
               ).data[0].number;
             }
           result-encoding: string
-      - name: Get scratch org alias
-        id: get_org_alias
-        run: echo "alias=pull-request-${{ steps.get_issue_number.outputs.result }}" >> "$GITHUB_OUTPUT"
+      - name: Get scratch org username
+        id: get_org_username
+        run: echo "username=pull-request-${{ steps.get_issue_number.outputs.result }}@scratch-ci.com" >> "$GITHUB_OUTPUT"
 
       - name: Install sfdx
         run: npm install @salesforce/cli@2.9.8 --global
@@ -114,17 +109,21 @@ jobs:
           SFDX_AUTH_FILE: ${{ secrets.SFDX_AUTH_FILE }}
         run: |
           echo "${SFDX_AUTH_FILE}" > auth.json
-          sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias devhub
+          sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias=devhub
 
       - name: print
         run: echo -E $(sf org list --json | jq)
+
+      - name: Query existing PR scratch org
+        id: query_current_org
+        run: echo 'status=$(sf org display --target-org=${{ steps.get_org_username.outputs.username }} --json | jq .status)' >> "$GITHUB_OUTPUT"
 
       ############## Create ##############
 
       - name: Create scratch org
         run: |
           # Attempt to create the scratch org and save the output
-          data="$(sf org create scratch --json --edition=developer --alias=${{ steps.get_org_alias.outputs.alias }} --set-default --duration-days=14 || true)"
+          data="$(sf org create scratch --json --edition=developer --username=${{ steps.get_org_username.outputs.username }} --set-default --duration-days=14 || true)"
           # If the status code is not 0, the command failed
           if [ "$(echo $data | jq .status)" != "0" ]; then
             echo "Failed to create scratch org. See the response below for more details."
@@ -136,7 +135,7 @@ jobs:
       - name: Get login info
         id: get_login_info
         run: |
-          data="$(sf org open --json --url-only --target-org=${{ steps.get_org_alias.outputs.alias }})"
+          data="$(sf org open --json --url-only --target-org=${{ steps.get_org_username.outputs.username }})"
           echo username=$(echo $data | jq -r .result.username) >> "$GITHUB_OUTPUT"
           echo url=$(echo $data | jq -r .result.url) >> "$GITHUB_OUTPUT"
           echo id=$(echo $data | jq -r .result.orgId) >> "$GITHUB_OUTPUT"
@@ -199,9 +198,9 @@ jobs:
               ).data[0].number;
             }
           result-encoding: string
-      - name: Get scratch org alias
-        id: get_org_alias
-        run: echo "alias=pull-request-${{ steps.get_issue_number.outputs.result }}" >> "$GITHUB_OUTPUT"
+      - name: Get scratch org username
+        id: get_org_username
+        run: echo "username=pull-request-${{ steps.get_issue_number.outputs.result }}@scratch-ci.com" >> "$GITHUB_OUTPUT"
 
       - name: Install sfdx
         run: npm install @salesforce/cli@2.9.8 --global
@@ -211,15 +210,19 @@ jobs:
           SFDX_AUTH_FILE: ${{ secrets.SFDX_AUTH_FILE }}
         run: |
           echo "${SFDX_AUTH_FILE}" > auth.json
-          sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias devhub
+          sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias=devhub
 
       - name: print
         run: echo -E $(sf org list --json | jq)
 
+      - name: Query existing PR scratch org
+        id: query_current_org
+        run: echo 'status=$(sf org display --target-org=${{ steps.get_org_username.outputs.username }} --json | jq .status)' >> "$GITHUB_OUTPUT"
+
       ############## Deploy ##############
 
       - name: Deploy source
-        run: sf project deploy start --target-org=${{ steps.get_org_alias.outputs.alias }} --dry-run
+        run: sf project deploy start --target-org=${{ steps.get_org_username.outputs.username }} --dry-run
 
       - name: Comment deployment
         uses: actions/github-script@v6
