@@ -1,0 +1,60 @@
+name: Setup SFDX
+on:
+  workflow_call:
+    secrets:
+      SFDX_AUTH_FILE:
+        description: SFDX Auth file
+        required: true
+    outputs:
+      org_status:
+        description: Whether or not a scratch org for this PR currently exists
+        value: ${{ jobs.setup.outputs.org_status }}
+      org_alias:
+        description: Alias of the PR scratch org in the form of `pull-request-#`
+        value: ${{ jobs.setup.outputs.org_alias }}
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      org_status: ${{ fromJson(steps.current_org.outputs).status }}
+      org_alias: pull-request-${{ steps.get_issue_number.outputs.result }}
+    steps:
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    - name: Get PR number
+      uses: actions/github-script@v6
+      id: get_issue_number
+      with:
+        script: |
+          if (context.issue.number) {
+            // Return issue number if present
+            return context.issue.number;
+          } else {
+            // Otherwise return issue number from commit
+            return (
+              await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                commit_sha: context.sha,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              })
+            ).data[0].number;
+          }
+        result-encoding: string
+
+    - name: Install sfdx
+      run: npm install @salesforce/cli@2.9.8 --global
+
+    - name: Authenticate
+      run: |
+        echo "${secrets.SFDX_AUTH_FILE}" > auth.json
+        sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias devhub
+        rm auth.json
+
+    - name: Query existing PR scratch org
+      id: current_org
+      env:
+        PR_NUMBER: ${{ steps.get_issue_number.outputs.result }}
+      run: sf org display --target-org=pull-request-${PR_NUMBER} --json >> "$GITHUB_OUTPUT"
