@@ -102,7 +102,7 @@ jobs:
 
   deploy:
     name: Deploy to PR scratch org
-    if: github.event.action == 'synchronize'
+    if: ${{ success() || github.event.action == 'synchronize' }}
     needs: create
     runs-on: ubuntu-latest
     steps:
