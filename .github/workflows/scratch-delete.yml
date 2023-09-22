@@ -1,7 +1,7 @@
 name: Delete scratch org
 on:
   pull_request:
-    types: [closed]
+    types: [assigned]
     # branches:
     #   - "scratch-alpha/**"
 
