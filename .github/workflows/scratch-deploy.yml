@@ -46,6 +46,8 @@ jobs:
         run: npm install @salesforce/cli@2.9.8 --global
 
       - name: Authenticate
+        env:
+          SFDX_AUTH_FILE: ${{ secrets.SFDX_AUTH_FILE }}
         run: |
           echo "${secrets.SFDX_AUTH_FILE}" > auth.json
           sf org login sfdx-url --sfdx-url-file auth.json --set-default-dev-hub --set-default --alias devhub
