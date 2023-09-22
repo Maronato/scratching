@@ -69,16 +69,12 @@ jobs:
         id: create_org
         run: |
           data="$(sf org create scratch --json --edition=developer --alias=${{ steps.get_org_alias.outputs.alias }} --set-default --duration-days=14 || true)"
-          echo "status=$(echo $data | jq .status)" >> "$GITHUB_OUTPUT"
-          echo "message=$(echo $data | jq .message)" >> "$GITHUB_OUTPUT"
-
-      - name: Abort creation
-        # Abort if something went wrong
-        if: steps.create_org.outputs.status != 0
-        run: |
-          echo "Something went wrong during scratch org creation. Aborting."
-          echo "Error: ${{ steps.create_org.outputs.message }}"
-          exit 1
+          status=$(echo $data | jq .status)
+          message=$(echo $data | jq .message)
+          if [ "$status" != "0" ]; then
+            echo $message
+            exit 1
+          fi
 
       - name: Deploy source
         run: sf project deploy start --target-org=${{ steps.get_org_alias.outputs.alias }} --dry-run
