@@ -59,7 +59,7 @@ jobs:
       - name: Delete existing PR scratch org
         run: |
           if [ "${{ steps.query_current_org.outputs.status }}" != "0" ]; then
-            echo "No scratch org found for this PR. Aborting."
+            echo "Failed to get info about current scratch org. Aborting."
             exit 1
           fi
           sf org delete scratch --target-org=${{ steps.get_org_alias.outputs.alias }} --no-prompt
