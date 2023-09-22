@@ -56,12 +56,10 @@ jobs:
 
       ############## Delete ##############
 
-      - name: Abort deletion
-        # Abort if the scratch org doesn't exist
-        if: steps.query_current_org.outputs.status != 0
-        run: |
-          echo "No scratch org found for this PR. Aborting."
-          exit 1
-
       - name: Delete existing PR scratch org
-        run: sf org delete scratch --target-org=${{ steps.get_org_alias.outputs.alias }} --no-prompt
+        run: |
+          if [ "${{ steps.query_current_org.outputs.status }}" != "0" ]; then
+            echo "No scratch org found for this PR. Aborting."
+            exit 1
+          fi
+          sf org delete scratch --target-org=${{ steps.get_org_alias.outputs.alias }} --no-prompt
