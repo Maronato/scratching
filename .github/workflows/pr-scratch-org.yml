@@ -55,9 +55,6 @@ jobs:
           echo "${SF_JWT_SECRET_KEY}" > server.key
           sf org login jwt --alias=scratch --username=${{ steps.get_org_username.outputs.username }} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub --set-default
 
-      - name: print
-        run: echo -E $(sf org list --json | jq)
-
       ############## Delete ##############
 
       - name: Delete existing PR scratch org
@@ -110,9 +107,6 @@ jobs:
           echo "${SF_JWT_SECRET_KEY}" > server.key
           sf org login jwt --alias=devhub --username=${SF_DEVHUB_USERNAME} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub --set-default
 
-      - name: print
-        run: echo -E $(sf org list --json | jq)
-
       ############## Create ##############
 
       - name: Create scratch org
@@ -122,14 +116,8 @@ jobs:
           # If the status code is not 0, the command failed
           if [ "$(echo $data | jq .status)" != "0" ]; then
             echo "Failed to create scratch org. See the response below for more details."
-            echo -E "$(echo $data | jq)"
             exit 1
           fi
-          echo -E "$(echo $data | jq))"
-
-      - name: Deploy source
-        continue-on-error: true
-        run: sf project deploy start
 
       - name: Get login info
         id: get_login_info
@@ -138,18 +126,16 @@ jobs:
           echo username=$(echo $data | jq -r .result.username) >> "$GITHUB_OUTPUT"
           echo url=$(echo $data | jq -r .result.url) >> "$GITHUB_OUTPUT"
           echo id=$(echo $data | jq -r .result.orgId) >> "$GITHUB_OUTPUT"
-          echo -E "$(echo $data | jq)"
 
       - name: Comment login url
         uses: actions/github-script@v6
         env:
-          ORG_USERNAME: ${{ steps.get_login_info.outputs.username }}}
-          ORG_URL: ${{ steps.get_login_info.outputs.url }}}
-          ORG_ID: ${{ steps.get_login_info.outputs.id }}}
+          ORG_USERNAME: ${{ steps.get_login_info.outputs.username }}
+          ORG_URL: ${{ steps.get_login_info.outputs.url }}
+          ORG_ID: ${{ steps.get_login_info.outputs.id }}
         with:
           script: |
             const { ORG_USERNAME, ORG_URL, ORG_ID } = process.env
-            console.log({ ORG_USERNAME, ORG_URL, ORG_ID })
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -211,9 +197,6 @@ jobs:
           echo "${SF_JWT_SECRET_KEY}" > server.key
           sf org login jwt --alias=scratch --username=${{ steps.get_org_username.outputs.username }} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub --set-default
 
-      - name: print
-        run: echo -E $(sf org list --json | jq)
-
       ############## Deploy ##############
 
       - name: Deploy source
@@ -221,11 +204,15 @@ jobs:
 
       - name: Comment deployment
         uses: actions/github-script@v6
+        env:
+          SHA: ${{ github.event.pull_request.head.sha }}
         with:
           script: |
+            const { SHA } = process.env
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '☁️ Deployed commit ${github.event.pull_request.head.sha}!'
+              body: `☁️ Deployed commit ${SHA}!`
             })
