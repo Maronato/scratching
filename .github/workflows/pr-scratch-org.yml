@@ -56,14 +56,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - name: Get npm global cache location
         id: npm_g_cache_location
-        run: echo "path=$(npm root -g)" >> "$GITHUB_OUTPUT"
+        run: echo "path=$(pnpm root -g)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v3
         with:
           path: ${{ steps.npm_g_cache_location.outputs.path }}
           key: ${{ runner.os }}-npmcache-${{ env.NODE_VERSION }}-sfdx-${{ env.SFDX_VERSION }}
 
       - name: Install sfdx
-        run: npm install --global --prefer-offline @salesforce/cli@${{ env.SFDX_VERSION }}
+        run: pnpm install --global --prefer-offline @salesforce/cli@${{ env.SFDX_VERSION }}
 
       - name: Authenticate
         # Authenticate to both devhub and scratch org so we can delete the scratch org
@@ -101,14 +101,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - name: Get npm global cache location
         id: npm_g_cache_location
-        run: echo "path=$(npm root -g)" >> "$GITHUB_OUTPUT"
+        run: echo "path=$(pnpm root -g)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v3
         with:
           path: ${{ steps.npm_g_cache_location.outputs.path }}
           key: ${{ runner.os }}-npmcache-${{ env.NODE_VERSION }}-sfdx-${{ env.SFDX_VERSION }}
 
       - name: Install sfdx
-        run: npm install --global --prefer-offline @salesforce/cli@${{ env.SFDX_VERSION }}
+        run: pnpm install --global --prefer-offline @salesforce/cli@${{ env.SFDX_VERSION }}
 
       - name: Authenticate
         run: |
@@ -170,14 +170,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - name: Get npm global cache location
         id: npm_g_cache_location
-        run: echo "path=$(npm root -g)" >> "$GITHUB_OUTPUT"
+        run: echo "path=$(pnpm root -g)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v3
         with:
           path: ${{ steps.npm_g_cache_location.outputs.path }}
           key: ${{ runner.os }}-npmcache-${{ env.NODE_VERSION }}-sfdx-${{ env.SFDX_VERSION }}
 
       - name: Install sfdx
-        run: npm install --global --prefer-offline @salesforce/cli@${{ env.SFDX_VERSION }}
+        run: pnpm install --global --prefer-offline @salesforce/cli@${{ env.SFDX_VERSION }}
 
       - name: Authenticate
         run: |
