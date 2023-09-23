@@ -175,7 +175,7 @@ jobs:
       - name: Get npm global cache location
         id: npm_g_cache_location
         run: |
-          echo "pnpm_path=$(pnpm root -g)" >> "$GITHUB_OUTPUT"
+          echo "pnpm_path=/home/runner/setup-pnpm/node_modules/" >> "$GITHUB_OUTPUT"
           echo "npm_path=$(npm root -g)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v3
         with:
