@@ -11,6 +11,7 @@ env:
   SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
   SF_JWT_SECRET_KEY: ${{ secrets.SF_JWT_SECRET_KEY }}
   SF_DEVHUB_USERNAME: ${{ secrets.SF_DEVHUB_USERNAME }}
+  SFDX_VERSION: 2.9.8
 
 jobs:
   gen_username:
@@ -55,7 +56,7 @@ jobs:
           cache: "npm"
 
       - name: Install sfdx
-        run: npm install --global @salesforce/cli@2.9.8
+        run: npm install --global @salesforce/cli@${SFDX_VERSION}
 
       - name: Authenticate
         # Authenticate to both devhub and scratch org so we can delete the scratch org
@@ -84,13 +85,16 @@ jobs:
     steps:
       ############## Setup ##############
       - uses: actions/checkout@v4
+      - uses: actions/cache@v3
+        with:
+          path: "~/.npm"
+          key: ${{ runner.os }}-npmcache-sfdx-${SFDX_VERSION}
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-          cache: "npm"
 
       - name: Install sfdx
-        run: npm install @salesforce/cli@2.9.8 --global
+        run: npm install --global @salesforce/cli@${SFDX_VERSION}
 
       - name: Authenticate
         run: |
@@ -147,13 +151,19 @@ jobs:
     steps:
       ############## Setup ##############
       - uses: actions/checkout@v4
+      # - uses: actions/cache@v3
+      #   with:
+      #     path: "~/.npm"
+      #     key: ${{ runner.os }}-npmcache-sfdx-${SFDX_VERSION}
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-          cache: "npm"
+
+      - name: print node_modules location
+        run: npm root -g
 
       - name: Install sfdx
-        run: npm install @salesforce/cli@2.9.8 --global
+        run: npm install --global @salesforce/cli@${SFDX_VERSION}
 
       - name: Authenticate
         run: |
