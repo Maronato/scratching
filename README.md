@@ -19,11 +19,5 @@ The `sfdx-project.json` file contains useful configuration information for your 
 
 no action!
 letsgo
-fdsf
-dasd
-sfsf
-fdsfd
-fdfsdfgdfghgfhfg
-fggfgfdgdf
-
-hfhf
+as
+gfd
