@@ -154,14 +154,13 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-      - id: npm_g_cache_location
+      - name: Get npm global cache location
+        id: npm_g_cache_location
         run: echo "path=$(npm root -g)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v3
-        env:
-          PATH: ${{ steps.npm_g_cache_location.outputs.path }}
         with:
-          path: "${PATH}"
-          key: ${{ runner.os }}-npmcache-sfdx-${SFDX_VERSION}
+          path: ${{ steps.npm_g_cache_location.outputs.path }}
+          key: ${{ runner.os }}-npmcache-sfdx-${{ env.SFDX_VERSION }}
 
       - name: print node_modules location
         run: npm root -g
