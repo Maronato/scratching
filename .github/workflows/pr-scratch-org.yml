@@ -63,7 +63,7 @@ jobs:
           key: ${{ runner.os }}-npmcache-${{ env.NODE_VERSION }}-sfdx-${{ env.SFDX_VERSION }}
 
       - name: Install sfdx
-        run: npm install --global @salesforce/cli@${{ env.SFDX_VERSION }}
+        run: npm install --global --prefer-offline @salesforce/cli@${{ env.SFDX_VERSION }}
 
       - name: Authenticate
         # Authenticate to both devhub and scratch org so we can delete the scratch org
@@ -108,7 +108,7 @@ jobs:
           key: ${{ runner.os }}-npmcache-${{ env.NODE_VERSION }}-sfdx-${{ env.SFDX_VERSION }}
 
       - name: Install sfdx
-        run: npm install --global @salesforce/cli@${{ env.SFDX_VERSION }}
+        run: npm install --global --prefer-offline @salesforce/cli@${{ env.SFDX_VERSION }}
 
       - name: Authenticate
         run: |
@@ -177,7 +177,7 @@ jobs:
           key: ${{ runner.os }}-npmcache-${{ env.NODE_VERSION }}-sfdx-${{ env.SFDX_VERSION }}
 
       - name: Install sfdx
-        run: npm install --global @salesforce/cli@${{ env.SFDX_VERSION }}
+        run: npm install --global --prefer-offline @salesforce/cli@${{ env.SFDX_VERSION }}
 
       - name: Authenticate
         run: |
