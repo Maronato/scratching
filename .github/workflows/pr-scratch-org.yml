@@ -69,18 +69,19 @@ jobs:
         run: pnpm install --global --prefer-offline @salesforce/cli@${{ env.SFDX_VERSION }}
 
       - name: Authenticate DevHub and scratch org
-        # Authenticate to both devhub and scratch org so we can delete the scratch org
         run: |
           echo "${{ env.SF_JWT_SECRET_KEY }}" > server.key
           sf org login jwt --username=${{ env.SF_DEVHUB_USERNAME }} --jwt-key-file server.key --client-id=${{ env.SF_CONSUMER_KEY }} --set-default-dev-hub
-          sf org login jwt --username=${{ env.SCRATCH_USERNAME }} --jwt-key-file server.key --client-id=${{ env.SF_CONSUMER_KEY }} --set-default
 
       ############## Delete ##############
+
+      - name: Authenticate scratch org
+        run: sf org login jwt --username=${{ env.SCRATCH_USERNAME }} --jwt-key-file server.key --client-id=${{ env.SF_CONSUMER_KEY }} --set-default
 
       - name: Change scratch org username
         run: sf data update record --sobject User --where "Username=${{ env.SCRATCH_USERNAME }}" --values "Username=${{ env.RENAMED_USERNAME }}"
 
-      - name: Authenticate new scratch org
+      - name: Authenticate renamed scratch org
         run: sf org login jwt --username=${{ env.RENAMED_USERNAME }} --jwt-key-file server.key --client-id=${{ env.SF_CONSUMER_KEY }} --set-default
 
       - name: Delete scratch org
