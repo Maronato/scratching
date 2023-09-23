@@ -174,10 +174,14 @@ jobs:
           version: 8.7.5
       - name: Get npm global cache location
         id: npm_g_cache_location
-        run: echo "path=$(pnpm root -g)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "pnpm_path=$(pnpm root -g)" >> "$GITHUB_OUTPUT"
+          echo "npm_path=$(npm root -g)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v3
         with:
-          path: ${{ steps.npm_g_cache_location.outputs.path }}
+          path: |
+            ${{ steps.npm_g_cache_location.outputs.pnpm_path }}
+            ${{ steps.npm_g_cache_location.outputs.npm_path }}
           key: ${{ runner.os }}-npmcache-${{ env.NODE_VERSION }}-sfdx-${{ env.SFDX_VERSION }}
 
       - name: Install sfdx
