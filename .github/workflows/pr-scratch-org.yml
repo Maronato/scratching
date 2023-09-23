@@ -13,6 +13,7 @@ env:
   SF_DEVHUB_USERNAME: ${{ secrets.SF_DEVHUB_USERNAME }}
   SFDX_VERSION: 2.9.8
   NODE_VERSION: 18.17.1
+  PNPM_VERSION: 8.7.5
 
 jobs:
   gen_username:
@@ -48,39 +49,43 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SCRATCH_USERNAME: ${{ needs.gen_username.outputs.username }}
+      RENAMED_USERNAME: deleted-${{ needs.gen_username.outputs.username }}
     steps:
       ############## Setup ##############
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: Get npm global cache location
-        id: npm_g_cache_location
-        run: echo "path=$(npm root -g)" >> "$GITHUB_OUTPUT"
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - uses: actions/cache@v3
         with:
-          path: ${{ steps.npm_g_cache_location.outputs.path }}
-          key: ${{ runner.os }}-npmcache-${{ env.NODE_VERSION }}-sfdx-${{ env.SFDX_VERSION }}
+          path: /home/runner/setup-pnpm/node_modules/
+          key: ${{ runner.os }}-pnpmcache-${{ env.NODE_VERSION }}-${{ env.PNPM_VERSION }}-sfdx-${{ env.SFDX_VERSION }}
 
       - name: Install sfdx
-        run: npm install --global @salesforce/cli@${{ env.SFDX_VERSION }}
+        run: pnpm install --global --prefer-offline @salesforce/cli@${{ env.SFDX_VERSION }}
 
-      - name: Authenticate
-        # Authenticate to both devhub and scratch org so we can delete the scratch org
+      - name: Authenticate DevHub and scratch org
         run: |
           echo "${{ env.SF_JWT_SECRET_KEY }}" > server.key
           sf org login jwt --username=${{ env.SF_DEVHUB_USERNAME }} --jwt-key-file server.key --client-id=${{ env.SF_CONSUMER_KEY }} --set-default-dev-hub
-          sf org login jwt --username=${{ env.SCRATCH_USERNAME }} --jwt-key-file server.key --client-id=${{ env.SF_CONSUMER_KEY }} --set-default
 
       ############## Delete ##############
 
-      - name: Delete existing PR scratch org
-        # Attempt to delete it, but don't fail if it doesn't exist
-        run: |
-          # Change the user's username before deleting so we can reuse it later
-          new_name="deleted-${{ env.SCRATCH_USERNAME }}"
-          sf data update record --sobject User --where "Username=${{ env.SCRATCH_USERNAME }}" --values "Username=deleted-${new_name}" || exit 0
-          sf org delete scratch --target-org=${new_name} --no-prompt || true
+      - name: Authenticate scratch org
+        run: sf org login jwt --username=${{ env.SCRATCH_USERNAME }} --jwt-key-file server.key --client-id=${{ env.SF_CONSUMER_KEY }} --set-default
+
+      - name: Change scratch org username
+        run: sf data update record --sobject User --where "Username=${{ env.SCRATCH_USERNAME }}" --values "Username=${{ env.RENAMED_USERNAME }}"
+
+      - name: Authenticate renamed scratch org
+        run: sf org login jwt --username=${{ env.RENAMED_USERNAME }} --jwt-key-file server.key --client-id=${{ env.SF_CONSUMER_KEY }} --set-default
+
+      - name: Delete scratch org
+        run: sf org delete scratch --target-org=${{ env.RENAMED_USERNAME }} --no-prompt
 
   create:
     name: Create PR scratch org
@@ -99,16 +104,17 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: Get npm global cache location
-        id: npm_g_cache_location
-        run: echo "path=$(npm root -g)" >> "$GITHUB_OUTPUT"
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - uses: actions/cache@v3
         with:
-          path: ${{ steps.npm_g_cache_location.outputs.path }}
-          key: ${{ runner.os }}-npmcache-${{ env.NODE_VERSION }}-sfdx-${{ env.SFDX_VERSION }}
+          path: /home/runner/setup-pnpm/node_modules/
+          key: ${{ runner.os }}-pnpmcache-${{ env.NODE_VERSION }}-${{ env.PNPM_VERSION }}-sfdx-${{ env.SFDX_VERSION }}
 
       - name: Install sfdx
-        run: npm install --global @salesforce/cli@${{ env.SFDX_VERSION }}
+        run: pnpm install --global --prefer-offline @salesforce/cli@${{ env.SFDX_VERSION }}
 
       - name: Authenticate
         run: |
@@ -168,16 +174,17 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: Get npm global cache location
-        id: npm_g_cache_location
-        run: echo "path=$(npm root -g)" >> "$GITHUB_OUTPUT"
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - uses: actions/cache@v3
         with:
-          path: ${{ steps.npm_g_cache_location.outputs.path }}
-          key: ${{ runner.os }}-npmcache-${{ env.NODE_VERSION }}-sfdx-${{ env.SFDX_VERSION }}
+          path: /home/runner/setup-pnpm/node_modules/
+          key: ${{ runner.os }}-pnpmcache-${{ env.NODE_VERSION }}-${{ env.PNPM_VERSION }}-sfdx-${{ env.SFDX_VERSION }}
 
       - name: Install sfdx
-        run: npm install --global @salesforce/cli@${{ env.SFDX_VERSION }}
+        run: pnpm install --global --prefer-offline @salesforce/cli@${{ env.SFDX_VERSION }}
 
       - name: Authenticate
         run: |
