@@ -187,6 +187,8 @@ jobs:
       - name: Install sfdx
         run: pnpm install --global --prefer-offline @salesforce/cli@${{ env.SFDX_VERSION }}
 
+      - run: which sf
+
       - name: Authenticate
         run: |
           echo "${{ env.SF_JWT_SECRET_KEY }}" > server.key
