@@ -2,25 +2,23 @@ name: Create scratch org for PR
 on:
   pull_request:
     types: [opened, reopened, synchronize, closed]
-    # branches:
-    #   - "scratch-alpha/**"
 
 permissions:
   # Allow creating comments
   pull-requests: write
 
-jobs:
-  delete:
-    name: Delete PR scratch org
-    if: ${{ github.event.action == 'reopened' || github.event.action == 'closed' }}
-    runs-on: ubuntu-latest
-    steps:
-      ############## Setup ##############
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
+env:
+  SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
+  SF_JWT_SECRET_KEY: ${{ secrets.SF_JWT_SECRET_KEY }}
+  SF_DEVHUB_USERNAME: ${{ secrets.SF_DEVHUB_USERNAME }}
 
+jobs:
+  gen_username:
+    name: Generate scratch org username
+    runs-on: ubuntu-latest
+    outputs:
+      username: pull-request-${{ steps.get_issue_number.outputs.result }}@scratch-ci.com
+    steps:
       - name: Get PR number
         uses: actions/github-script@v6
         id: get_issue_number
@@ -40,84 +38,68 @@ jobs:
               ).data[0].number;
             }
           result-encoding: string
-      - name: Get scratch org username
-        id: get_org_username
-        run: echo "username=pull-request-${{ steps.get_issue_number.outputs.result }}@scratch-ci.com" >> "$GITHUB_OUTPUT"
+
+  delete:
+    name: Delete PR scratch org
+    if: ${{ github.event.action == 'reopened' || github.event.action == 'closed' }}
+    needs: gen_username
+    runs-on: ubuntu-latest
+    env:
+      SCRATCH_USERNAME: ${{ needs.gen_username.outputs.username }}
+    steps:
+      ############## Setup ##############
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: "npm"
 
       - name: Install sfdx
-        run: npm install @salesforce/cli@2.9.8 --global
+        run: npm install --global @salesforce/cli@2.9.8
 
       - name: Authenticate
-        env:
-          SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
-          SF_JWT_SECRET_KEY: ${{ secrets.SF_JWT_SECRET_KEY }}
+        # Authenticate to both devhub and scratch org so we can delete the scratch org
         run: |
           echo "${SF_JWT_SECRET_KEY}" > server.key
-          sf org login jwt --alias=scratch --username=${{ steps.get_org_username.outputs.username }} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub --set-default
+          sf org login jwt --username=${SF_DEVHUB_USERNAME} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub
+          sf org login jwt --username=${SCRATCH_USERNAME} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default
 
       ############## Delete ##############
 
       - name: Delete existing PR scratch org
+        # Attempt to delete it, but don't fail if it doesn't exist
         run: sf org delete scratch --no-prompt || true
 
   create:
     name: Create PR scratch org
-    if: ${{ (success() && github.event.action != 'closed') || github.event.action == 'opened' || github.event.action == 'reopened' }}
-    needs: delete
+    # Only run on PR open or reopen.
+    if: ${{ github.event.action == 'opened' || github.event.action == 'reopened' }}
+    needs:
+      - delete
+      - gen_username
     runs-on: ubuntu-latest
+    env:
+      SCRATCH_USERNAME: ${{ needs.gen_username.outputs.username }}
     steps:
       ############## Setup ##############
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-
-      - name: Get PR number
-        uses: actions/github-script@v6
-        id: get_issue_number
-        with:
-          script: |
-            if (context.issue.number) {
-              // Return issue number if present
-              return context.issue.number;
-            } else {
-              // Otherwise return issue number from commit
-              return (
-                await github.rest.repos.listPullRequestsAssociatedWithCommit({
-                  commit_sha: context.sha,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                })
-              ).data[0].number;
-            }
-          result-encoding: string
-      - name: Get scratch org username
-        id: get_org_username
-        run: echo "username=pull-request-${{ steps.get_issue_number.outputs.result }}@scratch-ci.com" >> "$GITHUB_OUTPUT"
+          cache: "npm"
 
       - name: Install sfdx
         run: npm install @salesforce/cli@2.9.8 --global
 
       - name: Authenticate
-        env:
-          SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
-          SF_JWT_SECRET_KEY: ${{ secrets.SF_JWT_SECRET_KEY }}
-          SF_DEVHUB_USERNAME: ${{ secrets.SF_DEVHUB_USERNAME }}
         run: |
           echo "${SF_JWT_SECRET_KEY}" > server.key
-          sf org login jwt --alias=devhub --username=${SF_DEVHUB_USERNAME} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub --set-default
+          sf org login jwt --username=${SF_DEVHUB_USERNAME} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub
 
       ############## Create ##############
 
       - name: Create scratch org
-        run: |
-          # Attempt to create the scratch org and save the output
-          data="$(sf org create scratch --json --edition=developer --username=${{ steps.get_org_username.outputs.username }} --set-default --alias=scratch --duration-days=14 || true)"
-          # If the status code is not 0, the command failed
-          if [ "$(echo $data | jq .status)" != "0" ]; then
-            echo "Failed to create scratch org. See the response below for more details."
-            exit 1
-          fi
+        run: sf org create scratch --json --edition=developer --username=${SCRATCH_USERNAME} --set-default --duration-days=14 | jq
 
       - name: Get login info
         id: get_login_info
@@ -154,53 +136,33 @@ jobs:
 
   deploy:
     name: Deploy to PR scratch org
+    # Only run on PR sync (i.e. new commits pushed to PR)
     if: ${{ github.event.action == 'synchronize' }}
     runs-on: ubuntu-latest
+    needs:
+      - gen_username
+    env:
+      SCRATCH_USERNAME: ${{ needs.gen_username.outputs.username }}
     steps:
       ############## Setup ##############
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-
-      - name: Get PR number
-        uses: actions/github-script@v6
-        id: get_issue_number
-        with:
-          script: |
-            if (context.issue.number) {
-              // Return issue number if present
-              return context.issue.number;
-            } else {
-              // Otherwise return issue number from commit
-              return (
-                await github.rest.repos.listPullRequestsAssociatedWithCommit({
-                  commit_sha: context.sha,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                })
-              ).data[0].number;
-            }
-          result-encoding: string
-      - name: Get scratch org username
-        id: get_org_username
-        run: echo "username=pull-request-${{ steps.get_issue_number.outputs.result }}@scratch-ci.com" >> "$GITHUB_OUTPUT"
+          cache: "npm"
 
       - name: Install sfdx
         run: npm install @salesforce/cli@2.9.8 --global
 
       - name: Authenticate
-        env:
-          SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
-          SF_JWT_SECRET_KEY: ${{ secrets.SF_JWT_SECRET_KEY }}
         run: |
           echo "${SF_JWT_SECRET_KEY}" > server.key
-          sf org login jwt --alias=scratch --username=${{ steps.get_org_username.outputs.username }} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub --set-default
+          sf org login jwt --username=${SCRATCH_USERNAME} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default
 
       ############## Deploy ##############
 
       - name: Deploy source
-        run: sf project deploy start --dry-run
+        run: sf project deploy start
 
       - name: Comment deployment
         uses: actions/github-script@v6
@@ -214,5 +176,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `☁️ Deployed commit ${SHA}!`
+              body: `☁️ Synced to commit ${SHA}`
             })
