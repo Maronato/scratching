@@ -157,8 +157,10 @@ jobs:
       - id: npm_g_cache_location
         run: echo "path=$(npm root -g)" >> "$GITHUB_ENV"
       - uses: actions/cache@v3
+        env:
+          PATH: ${{ steps.npm_g_cache_location.outputs.path }}
         with:
-          path: ${{ steps.npm_g_cache_location.outputs.path }}
+          path: "${PATH}"
           key: ${{ runner.os }}-npmcache-sfdx-${SFDX_VERSION}
 
       - name: print node_modules location
