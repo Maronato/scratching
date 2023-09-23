@@ -81,6 +81,9 @@ jobs:
       - name: Change scratch org username
         run: sf data update record --sobject User --where "Username=${{ env.SCRATCH_USERNAME }}" --values "Username=${{ env.RENAMED_USERNAME }}"
 
+      - name: Wait for username change to propagate
+        run: sleep 120
+
       - name: Authenticate renamed scratch org
         run: sf org login jwt --username=${{ env.RENAMED_USERNAME }} --jwt-key-file server.key --client-id=${{ env.SF_CONSUMER_KEY }} --set-default
 
