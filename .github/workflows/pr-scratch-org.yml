@@ -13,6 +13,7 @@ env:
   SF_DEVHUB_USERNAME: ${{ secrets.SF_DEVHUB_USERNAME }}
   SFDX_VERSION: 2.9.8
   NODE_VERSION: 18.17.1
+  PNPM_VERSION: 8.7.5
 
 jobs:
   gen_username:
@@ -171,18 +172,11 @@ jobs:
       - name: Setup PNPM
         uses: pnpm/action-setup@v2
         with:
-          version: 8.7.5
-      - name: Get npm global cache location
-        id: npm_g_cache_location
-        run: |
-          echo "pnpm_path=/home/runner/setup-pnpm/node_modules/" >> "$GITHUB_OUTPUT"
-          echo "npm_path=$(npm root -g)" >> "$GITHUB_OUTPUT"
+          version: ${{ env.PNPM_VERSION }}
       - uses: actions/cache@v3
         with:
-          path: |
-            ${{ steps.npm_g_cache_location.outputs.pnpm_path }}
-            ${{ steps.npm_g_cache_location.outputs.npm_path }}
-          key: ${{ runner.os }}-npmcache-${{ env.NODE_VERSION }}-sfdx-${{ env.SFDX_VERSION }}
+          path: /home/runner/setup-pnpm/node_modules/
+          key: ${{ runner.os }}-pnpmcache-${{ env.NODE_VERSION }}-${{ env.PNPM_VERSION }}-sfdx-${{ env.SFDX_VERSION }}
 
       - name: Install sfdx
         run: pnpm install --global --prefer-offline @salesforce/cli@${{ env.SFDX_VERSION }}
