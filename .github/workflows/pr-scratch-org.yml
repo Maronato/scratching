@@ -46,14 +46,23 @@ jobs:
 
       - name: Install sfdx
         run: npm install @salesforce/cli@2.9.8 --global
+     
+      - name: Authenticate DevHub
+        env:
+          SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
+          SF_JWT_SECRET_KEY: ${{ secrets.SF_JWT_SECRET_KEY }}
+          SF_DEVHUB_USERNAME: ${{ secrets.SF_DEVHUB_USERNAME }}
+        run: |
+          echo "${SF_JWT_SECRET_KEY}" > server.key
+          sf org login jwt --alias=devhub --username=${SF_DEVHUB_USERNAME} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub
 
-      - name: Authenticate
+      - name: Authenticate Scratch org
         env:
           SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
           SF_JWT_SECRET_KEY: ${{ secrets.SF_JWT_SECRET_KEY }}
         run: |
           echo "${SF_JWT_SECRET_KEY}" > server.key
-          sf org login jwt --alias=scratch --username=${{ steps.get_org_username.outputs.username }} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub --set-default
+          sf org login jwt --alias=scratch --username=${{ steps.get_org_username.outputs.username }} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default
 
       ############## Delete ##############
 
@@ -100,7 +109,7 @@ jobs:
       - name: Install sfdx
         run: npm install @salesforce/cli@2.9.8 --global
 
-      - name: Authenticate
+      - name: Authenticate DevHub
         env:
           SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
           SF_JWT_SECRET_KEY: ${{ secrets.SF_JWT_SECRET_KEY }}
@@ -191,13 +200,13 @@ jobs:
       - name: Install sfdx
         run: npm install @salesforce/cli@2.9.8 --global
 
-      - name: Authenticate
+      - name: Authenticate Scratch org
         env:
           SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
           SF_JWT_SECRET_KEY: ${{ secrets.SF_JWT_SECRET_KEY }}
         run: |
           echo "${SF_JWT_SECRET_KEY}" > server.key
-          sf org login jwt --alias=scratch --username=${{ steps.get_org_username.outputs.username }} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub --set-default
+          sf org login jwt --alias=scratch --username=${{ steps.get_org_username.outputs.username }} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default
 
       ############## Deploy ##############
 
