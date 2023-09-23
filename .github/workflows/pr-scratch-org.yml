@@ -58,7 +58,9 @@ jobs:
       ############## Delete ##############
 
       - name: Delete existing PR scratch org
-        run: sf org delete scratch --no-prompt || true
+        run: |
+          sf org list --all
+          sf org delete scratch --no-prompt || true
 
   create:
     name: Create PR scratch org
