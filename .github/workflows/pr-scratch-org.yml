@@ -151,13 +151,15 @@ jobs:
     steps:
       ############## Setup ##############
       - uses: actions/checkout@v4
-      # - uses: actions/cache@v3
-      #   with:
-      #     path: "~/.npm"
-      #     key: ${{ runner.os }}-npmcache-sfdx-${SFDX_VERSION}
       - uses: actions/setup-node@v3
         with:
           node-version: 18
+      - id: npm_g_cache_location
+        run: echo "path=$(npm root -g)" >> "$GITHUB_ENV"
+      - uses: actions/cache@v3
+        with:
+          path: ${{ steps.npm_g_cache_location.outputs.path }}
+          key: ${{ runner.os }}-npmcache-sfdx-${SFDX_VERSION}
 
       - name: print node_modules location
         run: npm root -g
