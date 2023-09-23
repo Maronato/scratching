@@ -76,7 +76,11 @@ jobs:
 
       - name: Delete existing PR scratch org
         # Attempt to delete it, but don't fail if it doesn't exist
-        run: sf org delete scratch --no-prompt || true
+        run: |
+          # Change the user's username before deleting so we can reuse it later
+          new_name="deleted-${{ env.SCRATCH_USERNAME }}"
+          sf data update record --sobject User --where "Username=${{ env.SCRATCH_USERNAME }}" --values "Username=deleted-${new_name}" || exit 0
+          sf org delete scratch --target-org=${new_name} --no-prompt || true
 
   create:
     name: Create PR scratch org
