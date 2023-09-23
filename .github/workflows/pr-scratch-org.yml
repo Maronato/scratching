@@ -53,17 +53,23 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-          cache: "npm"
+      - name: Get npm global cache location
+        id: npm_g_cache_location
+        run: echo "path=$(npm root -g)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v3
+        with:
+          path: ${{ steps.npm_g_cache_location.outputs.path }}
+          key: ${{ runner.os }}-npmcache-sfdx-${{ env.SFDX_VERSION }}
 
       - name: Install sfdx
-        run: npm install --global @salesforce/cli@${SFDX_VERSION}
+        run: npm install --global @salesforce/cli@${{ env.SFDX_VERSION }}
 
       - name: Authenticate
         # Authenticate to both devhub and scratch org so we can delete the scratch org
         run: |
-          echo "${SF_JWT_SECRET_KEY}" > server.key
-          sf org login jwt --username=${SF_DEVHUB_USERNAME} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub
-          sf org login jwt --username=${SCRATCH_USERNAME} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default
+          echo "${{ env.SF_JWT_SECRET_KEY }}" > server.key
+          sf org login jwt --username=${{ env.SF_DEVHUB_USERNAME }} --jwt-key-file server.key --client-id=${{ env.SF_CONSUMER_KEY }} --set-default-dev-hub
+          sf org login jwt --username=${{ env.SCRATCH_USERNAME }} --jwt-key-file server.key --client-id=${{ env.SF_CONSUMER_KEY }} --set-default
 
       ############## Delete ##############
 
@@ -85,26 +91,29 @@ jobs:
     steps:
       ############## Setup ##############
       - uses: actions/checkout@v4
-      - uses: actions/cache@v3
-        with:
-          path: "~/.npm"
-          key: ${{ runner.os }}-npmcache-sfdx-${SFDX_VERSION}
       - uses: actions/setup-node@v3
         with:
           node-version: 18
+      - name: Get npm global cache location
+        id: npm_g_cache_location
+        run: echo "path=$(npm root -g)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v3
+        with:
+          path: ${{ steps.npm_g_cache_location.outputs.path }}
+          key: ${{ runner.os }}-npmcache-sfdx-${{ env.SFDX_VERSION }}
 
       - name: Install sfdx
-        run: npm install --global @salesforce/cli@${SFDX_VERSION}
+        run: npm install --global @salesforce/cli@${{ env.SFDX_VERSION }}
 
       - name: Authenticate
         run: |
-          echo "${SF_JWT_SECRET_KEY}" > server.key
-          sf org login jwt --username=${SF_DEVHUB_USERNAME} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default-dev-hub
+          echo "${{ env.SF_JWT_SECRET_KEY }}" > server.key
+          sf org login jwt --username=${{ env.SF_DEVHUB_USERNAME }} --jwt-key-file server.key --client-id=${{ env.SF_CONSUMER_KEY }} --set-default-dev-hub
 
       ############## Create ##############
 
       - name: Create scratch org
-        run: sf org create scratch --json --edition=developer --username=${SCRATCH_USERNAME} --set-default --duration-days=14 | jq
+        run: sf org create scratch --json --edition=developer --username=${{ env.SCRATCH_USERNAME }} --set-default --duration-days=14 | jq
 
       - name: Get login info
         id: get_login_info
@@ -162,16 +171,13 @@ jobs:
           path: ${{ steps.npm_g_cache_location.outputs.path }}
           key: ${{ runner.os }}-npmcache-sfdx-${{ env.SFDX_VERSION }}
 
-      - name: print node_modules location
-        run: npm root -g
-
       - name: Install sfdx
-        run: npm install --global @salesforce/cli@${SFDX_VERSION}
+        run: npm install --global @salesforce/cli@${{ env.SFDX_VERSION }}
 
       - name: Authenticate
         run: |
-          echo "${SF_JWT_SECRET_KEY}" > server.key
-          sf org login jwt --username=${SCRATCH_USERNAME} --jwt-key-file server.key --client-id=${SF_CONSUMER_KEY} --set-default
+          echo "${{ env.SF_JWT_SECRET_KEY }}" > server.key
+          sf org login jwt --username=${{ env.SCRATCH_USERNAME }} --jwt-key-file server.key --client-id=${{ env.SF_CONSUMER_KEY }} --set-default
 
       ############## Deploy ##############
 
