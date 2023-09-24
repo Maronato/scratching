@@ -79,7 +79,7 @@ jobs:
         run: sf org login jwt --username=${{ env.SCRATCH_USERNAME }} --jwt-key-file server.key --client-id=${{ env.SF_CONSUMER_KEY }} --set-default
 
       - name: Delete scratch org
-        run: sf org delete scratch --target-org=${{ env.RENAMED_USERNAME }} --no-prompt
+        run: sf org delete scratch --target-org=${{ env.SCRATCH_USERNAME }} --no-prompt
 
   create:
     name: Create scratch org
