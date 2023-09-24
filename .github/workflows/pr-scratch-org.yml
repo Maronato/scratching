@@ -14,13 +14,14 @@ env:
   SFDX_VERSION: 2.9.8
   NODE_VERSION: 18.17.1
   PNPM_VERSION: 8.7.5
+  USERNAME_DOMAIN: scratch-ci.com
 
 jobs:
   gen_username:
     name: Generate scratch org username
     runs-on: ubuntu-latest
     outputs:
-      username: pull-request-${{ steps.get_issue_number.outputs.result }}@scratch-ci.com
+      username: pull-request-${{ steps.get_issue_number.outputs.result }}@${{ env.USERNAME_DOMAIN }}
     steps:
       - name: Get PR number
         uses: actions/github-script@v6
